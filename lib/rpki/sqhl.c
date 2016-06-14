@@ -1982,6 +1982,10 @@ verifyChildCRL(
     }
     sta = verify_crl(conp, crl, cf->fields[CRF_FIELD_AKI],
                      cf->fields[CRF_FIELD_ISSUER]);
+    if (sta && sta != ERR_SCM_NOTVALID)
+    {
+        goto done;
+    }
     id = *((unsigned int *)(s->vec[2].valptr));
     // if invalid, delete it
     if (sta < 0)
