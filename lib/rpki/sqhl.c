@@ -1769,28 +1769,21 @@ done:
  * @brief
  *     crl verification code
  *
- * @param[out] chainOK
- *     The value at this location will be set to true if a parent
- *     certificate was found, false otherwise.  Setting this to true
- *     does NOT mean that the CRL is valid, only that a parent cert
- *     was found.  This MUST NOT be NULL.
  * @return
- *     0 if no parent was found (regardless of any other properties of
- *     the CRL), or if a parent was found and the CRL validates
- *     against the parent.  Otherwise, this returns a non-zero error
- *     code.
+ *     0 if the CRL is valid and no error was encountered,
+ *     ERR_SCM_NOTVALID if the CRL is not valid and no error was
+ *     encountered, and a different error code if an error was
+ *     encountered.
  */
 static err_code
 verify_crl(
     scmcon *conp,
     X509_CRL *crl,
     const char *aki,
-    const char *issuer,
-    int *chainOK)
+    const char *issuer)
 {
-    LOG(LOG_DEBUG, "verify_crl("
-        "conp=%p, crl=%p, aki=\"%s\", issuer=\"%s\", chainOK=%p)",
-        conp, crl, aki, issuer, chainOK);
+    LOG(LOG_DEBUG, "verify_crl(conp=%p, crl=%p, aki=\"%s\", issuer=\"%s\")",
+        conp, crl, aki, issuer);
 
     err_code sta = 0;
     int x509sta = 0;
@@ -1806,18 +1799,9 @@ verify_crl(
     parent = find_cert(conp, aki, issuer, NULL, NULL);
     if (parent == NULL)
     {
-        *chainOK = 0;
-        /**
-         * @bug
-         *     Isn't it wrong to return success if no parent was
-         *     found?  If so, fix it and update the return value
-         *     documentation above.  If not, update the documentation
-         *     above to clarify the semantics of this function and its
-         *     return value.
-         */
+        sta = ERR_SCM_NOTVALID;
         goto done;
     }
-    *chainOK = 1;
     /** @bug ignores error code (NULL) without explanation */
     pkey = X509_get_pubkey(parent);
     x509sta = X509_CRL_verify(crl, pkey);
@@ -1978,7 +1962,6 @@ verifyChildCRL(
     unsigned int i;
     unsigned int id;
     object_type typ;
-    int chainOK;
     char pathname[PATH_MAX];
 
     UNREFERENCED_PARAMETER(idx);
@@ -1997,9 +1980,8 @@ verifyChildCRL(
     {
         goto done;
     }
-    /** @bug ignores chainOK without explanation */
     sta = verify_crl(conp, crl, cf->fields[CRF_FIELD_AKI],
-                     cf->fields[CRF_FIELD_ISSUER], &chainOK);
+                     cf->fields[CRF_FIELD_ISSUER]);
     id = *((unsigned int *)(s->vec[2].valptr));
     // if invalid, delete it
     if (sta < 0)
@@ -3320,7 +3302,6 @@ add_crl(
     int crlsta = 0;
     err_code sta = 0;
     unsigned int i;
-    int chainOK;
     struct CertificateRevocationList crl;
 
     if (!goodoids[0].lth)
@@ -3353,14 +3334,15 @@ add_crl(
 
     // first verify the CRL
     sta = verify_crl(conp, xcrl, cf->fields[CRF_FIELD_AKI],
-                     cf->fields[CRF_FIELD_ISSUER], &chainOK);
-    if (sta)
+                     cf->fields[CRF_FIELD_ISSUER]);
+    if (sta && sta != ERR_SCM_NOTVALID)
     {
         goto done;
     }
+    _Bool valid = !sta;
 
     // then add the CRL
-    sta = addStateToFlags(&cf->flags, chainOK,
+    sta = addStateToFlags(&cf->flags, valid,
                           cf->fields[CRF_FIELD_FILENAME], outfull, scmp,
                           conp);
     if (sta)
@@ -3374,7 +3356,7 @@ add_crl(
     }
 
     // and do the revocations
-    if (chainOK)
+    if (valid)
     {
         LOG(LOG_DEBUG, "CRL has %u entries", cf->snlen);
         uint8_t *u = (uint8_t *) cf->snlist;
