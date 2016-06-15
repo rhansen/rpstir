@@ -84,6 +84,10 @@ created.  If you want to start sending data to routers again, run
 }
 
 upgrade_from_0_12 () {
+    mysql_cmd <<\EOF || fatal "failed to update database records"
+ALTER TABLE `rpki_cert` DROP COLUMN `sigval`;
+ALTER TABLE `rpki_roa` DROP COLUMN `sigval`;
+EOF
 }
 
 upgrade_from_0_11 () {

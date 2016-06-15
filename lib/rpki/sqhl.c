@@ -532,117 +532,6 @@ cleanup:
     return (sta);
 }
 
-/**
- * @brief
- *     This function gets the sigval parameter from a table based on
- *     the type.
- *
- * @return
- *     One of the SIGVAL_ constants indicating what happened.
- */
-static sigval_state
-get_sigval(
-    scmcon *conp,
-    object_type typ,
-    const char *ski,
-    const char *subj)
-{
-    scmtab *table;
-    unsigned int val;
-    scmsrch search_cols[] = {
-        {
-            .colno = 1,
-            .sqltype = SQL_C_ULONG,
-            .colname = "sigval",
-            .valptr = &val,
-            .valsize = sizeof(val),
-        },
-    };
-    char where[WHERESTR_SIZE];
-    if (OT_CER == typ)
-    {
-        xsnprintf(where, sizeof(where),
-                  "ski=\"%s\" and subject=\"%s\"", ski, subj);
-        table = theCertTable;
-    }
-    else if (OT_ROA == typ)
-    {
-        xsnprintf(where, sizeof(where), "ski=\"%s\"", ski);
-        table = theROATable;
-    }
-    else
-    {
-        return SIGVAL_UNKNOWN;
-    }
-    scmsrcha sigsrch = {
-        .vec = search_cols,
-        .ntot = ELTS(search_cols),
-        .nused = ELTS(search_cols),
-        .wherestr = where,
-    };
-    err_code sta = 0;
-
-    if (theSCMP != NULL)
-        initTables(theSCMP);
-    sta = searchscm(conp, table, &sigsrch, NULL, &ok,
-                    SCM_SRCH_DOVALUE_ALWAYS, NULL);
-    if (sta < 0)
-        return SIGVAL_UNKNOWN;
-    sigval_state sval = val;
-    if (sval < SIGVAL_UNKNOWN || sval > SIGVAL_INVALID)
-        return SIGVAL_UNKNOWN;
-    return sval;
-}
-
-/**
- * @brief
- *     This function attempts to set the sigval parameter in a table
- *     based on the type.
- */
-static err_code
-set_sigval(
-    scmcon *conp,
-    object_type typ,
-    const char *ski,
-    const char *subj,
-    sigval_state valu)
-{
-    /** @bug magic number */
-    char stmt[520];
-    err_code sta;
-    scmtab *table;
-    char where[sizeof(stmt)];
-
-    if (theSCMP != NULL)
-        initTables(theSCMP);
-    switch (typ)
-    {
-    case OT_CER:
-    {
-        table = theCertTable;
-        size_t subj_len = strlen(subj);
-        char escaped_subj[2 * subj_len + 1];
-        mysql_escape_string(escaped_subj, subj, subj_len);
-        xsnprintf(where, sizeof(where), "ski=\"%s\" and subject=\"%s\"",
-                  ski, escaped_subj);
-        break;
-    }
-    case OT_ROA:
-        table = theROATable;
-        xsnprintf(where, sizeof(where), "ski=\"%s\"", ski);
-        break;
-    default:
-        // other cases not handled yet
-        return ERR_SCM_UNSPECIFIED;
-    }
-    if (table == NULL)
-        return ERR_SCM_NOSUCHTAB;
-    xsnprintf(stmt, sizeof(stmt), "update %s set sigval=%d where %s;",
-              table->tabname, valu, where);
-    sta = statementscm_no_data(conp, stmt);
-    return sta;
-}
-
 /*
  * A verification function type
  */
@@ -657,67 +546,6 @@ vfunc(
 
 static vfunc *old_vfunc = NULL;
 static scmcon *thecon = NULL;
-
-/*
- * Our replacement for X509_verify. Consults the database first to see if the
- * certificate is already valid, otherwise calls X509_verify and then sets the
- * state in the db based on that. It returns 1 on success and 0 on failure.
- */
-
-static int local_verify(
-    X509 *cert,
-    EVP_PKEY *pkey)
-{
-    int x509sta = 0;
-    err_code sta = 0;
-    sigval_state sigval = SIGVAL_UNKNOWN;
-    int mok;
-    char *subj = NULL;
-    char *ski = NULL;
-
-    // first, get the subject and the SKI
-    /** @bug ignores error code without explanation */
-    subj = X509_to_subject(cert, &sta, &x509sta);
-    if (subj != NULL)
-    {
-        /** @bug ignores error code without explanation */
-        ski = X509_to_ski(cert, &sta, &x509sta);
-        if (ski != NULL)
-        {
-            sigval = get_sigval(thecon, OT_CER, ski, subj);
-        }
-    }
-    switch (sigval)
-    {
-    case SIGVAL_VALID:         /* already validated */
-        if (subj != NULL)
-            free((void *)subj);
-        if (ski != NULL)
-            free((void *)ski);
-        return 1;
-    case SIGVAL_INVALID:       /* already invalidated */
-        if (subj != NULL)
-            free((void *)subj);
-        if (ski != NULL)
-            free((void *)ski);
-        return 0;
-    case SIGVAL_UNKNOWN:
-    case SIGVAL_NOTPRESENT:
-    default:
-        break;                  /* compute validity, then set in db */
-    }
-    mok = X509_verify(cert, pkey);
-    if (mok)
-    {
-        /** @bug ignores error code without explanation */
-        set_sigval(thecon, OT_CER, ski, subj, SIGVAL_VALID);
-    }
-    if (subj != NULL)
-        free((void *)subj);
-    if (ski != NULL)
-        free((void *)ski);
-    return mok;
-}
 
 /*
  * Our own internal verifier, replacing the internal_verify function in
@@ -774,7 +602,7 @@ our_verify(
                 if (!mok)
                     goto end;
             }
-            else if (local_verify(xsubject, pkey) <= 0)
+            else if (X509_verify(xsubject, pkey) <= 0)
             {
                 ctx->error = X509_V_ERR_CERT_SIGNATURE_FAILURE;
                 ctx->current_cert = xsubject;
@@ -2030,17 +1858,8 @@ verify_roa(
 
     err_code sta = 0;
     X509 *cert;
-    sigval_state sigval;
 
-    // first, see if the ROA is already validated and in the DB
-    sigval = get_sigval(conp, OT_ROA, ski, NULL);
-    if (sigval == SIGVAL_VALID)
-    {
-        LOG(LOG_DEBUG, "ROA already verified; skipping checks");
-        *chainOK = 1;
-        goto done;
-    }
-    // next call the syntactic verification
+    // call the syntactic verification
     sta = roaValidate(r);
     if (sta)
     {
@@ -2069,14 +1888,6 @@ verify_roa(
     *chainOK = 1;
     sta = roaValidate2(r);
     X509_free(cert);
-    if (sta >= 0)
-    {
-        sta = set_sigval(conp, OT_ROA, ski, NULL, SIGVAL_VALID);
-        if (sta < 0)
-            LOG(LOG_ERR,
-                    "could not set ROA sigval: conp->mystat.errmsg = %s",
-                    conp->mystat.errmsg);
-    }
     sta = (sta < 0) ? sta : 0;
 
 done:

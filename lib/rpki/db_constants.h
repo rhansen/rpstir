@@ -2,22 +2,6 @@
 #define LIB_RPKI_DB_CONSTANTS_H
 
 
-/**
- * @brief
- *     Signature validation states
- */
-typedef enum {
-    // Use a negative value to force sigval_state to be a signed type.
-    // This prevents ancient versions of gcc from complaining with
-    // "comparison of unsigned expression < 0 is always false"
-    SIGVAL_silence_bogus_gcc_warning = -1,
-
-    SIGVAL_UNKNOWN = 0,
-    SIGVAL_NOTPRESENT,
-    SIGVAL_VALID,
-    SIGVAL_INVALID,
-} sigval_state;
-
 /*
  * Flags
  */
