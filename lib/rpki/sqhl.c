@@ -543,8 +543,8 @@ cleanup:
 static sigval_state
 get_cert_sigval(
     scmcon *conp,
-    const char *subj,
-    const char *ski)
+    const char *ski,
+    const char *subj)
 {
     unsigned int val;
     scmsrch search_cols[] = {
@@ -620,15 +620,15 @@ static sigval_state
 get_sigval(
     scmcon *conp,
     object_type typ,
-    const char *item1,
-    const char *item2)
+    const char *ski,
+    const char *subj)
 {
     switch (typ)
     {
     case OT_CER:
-        return get_cert_sigval(conp, item1, item2);
+        return get_cert_sigval(conp, ski, subj);
     case OT_ROA:
-        return get_roa_sigval(conp, item1);
+        return get_roa_sigval(conp, ski);
         // other cases not handled yet
     default:
         break;
@@ -644,8 +644,8 @@ get_sigval(
 static err_code
 set_cert_sigval(
     scmcon *conp,
-    const char *subj,
     const char *ski,
+    const char *subj,
     sigval_state valu)
 {
     /** @bug magic number */
@@ -690,8 +690,8 @@ static err_code
 set_sigval(
     scmcon *conp,
     object_type typ,
-    const char *item1,
-    const char *item2,
+    const char *ski,
+    const char *subject,
     sigval_state valu)
 {
     err_code sta = ERR_SCM_UNSPECIFIED;
@@ -699,10 +699,10 @@ set_sigval(
     switch (typ)
     {
     case OT_CER:
-        sta = set_cert_sigval(conp, item1, item2, valu);
+        sta = set_cert_sigval(conp, ski, subject, valu);
         break;
     case OT_ROA:
-        sta = set_roa_sigval(conp, item1, valu);
+        sta = set_roa_sigval(conp, ski, valu);
         break;
     default:
         // other cases not handled yet
@@ -752,7 +752,7 @@ static int local_verify(
         ski = X509_to_ski(cert, &sta, &x509sta);
         if (ski != NULL)
         {
-            sigval = get_sigval(thecon, OT_CER, subj, ski);
+            sigval = get_sigval(thecon, OT_CER, ski, subj);
         }
     }
     switch (sigval)
@@ -778,7 +778,7 @@ static int local_verify(
     if (mok)
     {
         /** @bug ignores error code without explanation */
-        set_sigval(thecon, OT_CER, subj, ski, SIGVAL_VALID);
+        set_sigval(thecon, OT_CER, ski, subj, SIGVAL_VALID);
     }
     if (subj != NULL)
         free((void *)subj);
