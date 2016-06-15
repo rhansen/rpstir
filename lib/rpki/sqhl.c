@@ -1765,6 +1765,91 @@ done:
     return (sta);
 }
 
+struct verify_crl_context {
+    scmcon *conp;
+    X509_CRL *crl;
+    _Bool success;
+};
+
+static find_cert_paths_cb verify_crl_cb;
+err_code
+verify_crl_cb(
+    void *cb_context,
+    STACK_OF(X509) *intermediates,
+    X509 *ta)
+{
+    LOG(LOG_DEBUG, "verify_crl_cb(cb_context=%p, intermediates=%p, ta=%p)",
+        cb_context, intermediates, ta);
+
+    err_code sta = 0;
+    struct verify_crl_context *ctx = cb_context;
+    X509 *ca = NULL;
+    EVP_PKEY *pkey = NULL;
+
+    assert(!ctx->success);
+
+    // pull out the bottom cert from the stack
+    ca = ta;
+    if (sk_X509_num(intermediates)) {
+        ca = sk_X509_shift(intermediates);
+        if (!ca)
+        {
+            LOG(LOG_ERR, "sk_X509_shift() failed");
+            sta = ERR_SCM_X509STACK;
+            goto done;
+        }
+    }
+
+    // verify the certification path
+    sta = checkit(ctx->conp, ca, intermediates, ta);
+    if (ERR_SCM_NOTVALID == sta)
+    {
+        // continue the search for a valid certification path
+        sta = 0;
+        goto done;
+    }
+    if (sta)
+    {
+        goto done;
+    }
+
+    // now check to see if the CRL signature is good
+    pkey = X509_get_pubkey(ca);
+    if (!pkey)
+    {
+        LOG(LOG_ERR, "X509_get_pubkey() failed unexpectedly");
+        sta = ERR_SCM_X509;
+        goto done;
+    }
+    int x509sta = X509_CRL_verify(ctx->crl, pkey);
+    if (1 == x509sta)
+    {
+        ctx->success = 1;
+        // no need to continue the search
+        sta = ERR_SCM_BREAK;
+        goto done;
+    }
+    if (x509sta)
+    {
+        LOG(LOG_ERR, "X509_CRL_verify() failed unexpectedly");
+        sta = ERR_SCM_CRL;
+        goto done;
+    }
+
+done:
+    EVP_PKEY_free(pkey);
+    if (ca && ca != ta && sk_X509_unshift(intermediates, ca) <= 0)
+    {
+        LOG(LOG_ERR, "sk_X509_unshift() failed unexpectedly");
+        // there's no way to restore the state to what the caller
+        // expects
+        abort();
+    }
+    LOG(LOG_DEBUG, "verify_crl_cb() returning %s: %s",
+        err2name(sta), err2string(sta));
+    return sta;
+}
+
 /**
  * @brief
  *     crl verification code
@@ -1786,29 +1871,18 @@ verify_crl(
         conp, crl, aki, issuer);
 
     err_code sta = 0;
-    int x509sta = 0;
-    X509 *parent;
-    EVP_PKEY *pkey;
 
-    /**
-     * @bug
-     *     find_cert() only returns one match.  What if there are
-     *     multiple matches?  (e.g., evil twin, cert renewal)
-     */
-    /** @bug ignores error code without explanation */
-    parent = find_cert(conp, aki, issuer, NULL, NULL);
-    if (parent == NULL)
+    struct verify_crl_context ctx = {
+        .conp = conp,
+        .crl = crl,
+    };
+    sta = find_cert_paths(conp, aki, issuer, &verify_crl_cb, &ctx);
+    if (sta && sta != ERR_SCM_BREAK)
     {
-        sta = ERR_SCM_NOTVALID;
+        assert(sta != ERR_SCM_NOTVALID);
         goto done;
     }
-    /** @bug ignores error code (NULL) without explanation */
-    pkey = X509_get_pubkey(parent);
-    x509sta = X509_CRL_verify(crl, pkey);
-    X509_free(parent);
-    EVP_PKEY_free(pkey);
-
-    sta = (x509sta != 1) ? ERR_SCM_NOTVALID : 0;
+    sta = ctx.success ? 0 : ERR_SCM_NOTVALID;
 
 done:
     LOG(LOG_DEBUG, "verify_crl() returning %s: %s",
