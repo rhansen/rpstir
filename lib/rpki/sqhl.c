@@ -546,34 +546,34 @@ get_cert_sigval(
     const char *subj,
     const char *ski)
 {
-    static scmsrcha *sigsrch = NULL;
-    unsigned int *svalp;
-    sigval_state sval;
+    unsigned int val;
+    scmsrch search_cols[] = {
+        {
+            .colno = 1,
+            .sqltype = SQL_C_ULONG,
+            .colname = "sigval",
+            .valptr = &val,
+            .valsize = sizeof(val),
+        },
+    };
+    char where[WHERESTR_SIZE];
+    xsnprintf(where, sizeof(where),
+              "ski=\"%s\" and subject=\"%s\"", ski, subj);
+    scmsrcha sigsrch = {
+        .vec = search_cols,
+        .ntot = ELTS(search_cols),
+        .nused = ELTS(search_cols),
+        .wherestr = where,
+    };
     err_code sta = 0;
 
     if (theSCMP != NULL)
         initTables(theSCMP);
-    if (sigsrch == NULL)
-    {
-        /** @bug ignores error code (NULL) without explanation */
-        sigsrch = newsrchscm(NULL, 1, 0, 1);
-        /**
-         * @bug on error sigsrch will be left in a half-initialized
-         * state and it will never be fully initialized
-         */
-        ADDCOL(sigsrch, "sigval", SQL_C_ULONG, sizeof(unsigned int), sta,
-               SIGVAL_UNKNOWN);
-    }
-    xsnprintf(sigsrch->wherestr, WHERESTR_SIZE,
-              "ski=\"%s\" and subject=\"%s\"", ski, subj);
-    sta = searchscm(conp, theCertTable, sigsrch, NULL, &ok,
+    sta = searchscm(conp, theCertTable, &sigsrch, NULL, &ok,
                     SCM_SRCH_DOVALUE_ALWAYS, NULL);
     if (sta < 0)
         return SIGVAL_UNKNOWN;
-    svalp = (unsigned int *)(sigsrch->vec[0].valptr);
-    if (svalp == NULL)
-        return SIGVAL_UNKNOWN;
-    sval = *svalp;
+    sigval_state sval = val;
     if (sval < SIGVAL_UNKNOWN || sval > SIGVAL_INVALID)
         return SIGVAL_UNKNOWN;
     return sval;
@@ -584,33 +584,33 @@ get_roa_sigval(
     scmcon *conp,
     const char *ski)
 {
-    static scmsrcha *sigsrch = NULL;
-    unsigned int *svalp;
-    sigval_state sval;
+    unsigned int val;
+    scmsrch search_cols[] = {
+        {
+            .colno = 1,
+            .sqltype = SQL_C_ULONG,
+            .colname = "sigval",
+            .valptr = &val,
+            .valsize = sizeof(val),
+        },
+    };
+    char where[WHERESTR_SIZE];
+    xsnprintf(where, sizeof(where), "ski=\"%s\"", ski);
+    scmsrcha sigsrch = {
+        .vec = search_cols,
+        .ntot = ELTS(search_cols),
+        .nused = ELTS(search_cols),
+        .wherestr = where,
+    };
     err_code sta = 0;
 
     if (theSCMP != NULL)
         initTables(theSCMP);
-    if (sigsrch == NULL)
-    {
-        /** @bug ignores error code (NULL) without explanation */
-        sigsrch = newsrchscm(NULL, 1, 0, 1);
-        /**
-         * @bug on error sigsrch will be left in a half-initialized
-         * state and it will never be fully initialized
-         */
-        ADDCOL(sigsrch, "sigval", SQL_C_ULONG, sizeof(unsigned int), sta,
-               SIGVAL_UNKNOWN);
-    }
-    xsnprintf(sigsrch->wherestr, WHERESTR_SIZE, "ski=\"%s\"", ski);
-    sta = searchscm(conp, theROATable, sigsrch, NULL, &ok,
+    sta = searchscm(conp, theROATable, &sigsrch, NULL, &ok,
                     SCM_SRCH_DOVALUE_ALWAYS, NULL);
     if (sta < 0)
         return SIGVAL_UNKNOWN;
-    svalp = (unsigned int *)(sigsrch->vec[0].valptr);
-    if (svalp == NULL)
-        return SIGVAL_UNKNOWN;
-    sval = *svalp;
+    sigval_state sval = val;
     if (sval < SIGVAL_UNKNOWN || sval > SIGVAL_INVALID)
         return SIGVAL_UNKNOWN;
     return sval;
