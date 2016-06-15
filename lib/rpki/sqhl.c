@@ -541,99 +541,57 @@ cleanup:
  *     One of the SIGVAL_ constants indicating what happened.
  */
 static sigval_state
-get_cert_sigval(
-    scmcon *conp,
-    const char *ski,
-    const char *subj)
-{
-    unsigned int val;
-    scmsrch search_cols[] = {
-        {
-            .colno = 1,
-            .sqltype = SQL_C_ULONG,
-            .colname = "sigval",
-            .valptr = &val,
-            .valsize = sizeof(val),
-        },
-    };
-    char where[WHERESTR_SIZE];
-    xsnprintf(where, sizeof(where),
-              "ski=\"%s\" and subject=\"%s\"", ski, subj);
-    scmsrcha sigsrch = {
-        .vec = search_cols,
-        .ntot = ELTS(search_cols),
-        .nused = ELTS(search_cols),
-        .wherestr = where,
-    };
-    err_code sta = 0;
-
-    if (theSCMP != NULL)
-        initTables(theSCMP);
-    sta = searchscm(conp, theCertTable, &sigsrch, NULL, &ok,
-                    SCM_SRCH_DOVALUE_ALWAYS, NULL);
-    if (sta < 0)
-        return SIGVAL_UNKNOWN;
-    sigval_state sval = val;
-    if (sval < SIGVAL_UNKNOWN || sval > SIGVAL_INVALID)
-        return SIGVAL_UNKNOWN;
-    return sval;
-}
-
-static sigval_state
-get_roa_sigval(
-    scmcon *conp,
-    const char *ski)
-{
-    unsigned int val;
-    scmsrch search_cols[] = {
-        {
-            .colno = 1,
-            .sqltype = SQL_C_ULONG,
-            .colname = "sigval",
-            .valptr = &val,
-            .valsize = sizeof(val),
-        },
-    };
-    char where[WHERESTR_SIZE];
-    xsnprintf(where, sizeof(where), "ski=\"%s\"", ski);
-    scmsrcha sigsrch = {
-        .vec = search_cols,
-        .ntot = ELTS(search_cols),
-        .nused = ELTS(search_cols),
-        .wherestr = where,
-    };
-    err_code sta = 0;
-
-    if (theSCMP != NULL)
-        initTables(theSCMP);
-    sta = searchscm(conp, theROATable, &sigsrch, NULL, &ok,
-                    SCM_SRCH_DOVALUE_ALWAYS, NULL);
-    if (sta < 0)
-        return SIGVAL_UNKNOWN;
-    sigval_state sval = val;
-    if (sval < SIGVAL_UNKNOWN || sval > SIGVAL_INVALID)
-        return SIGVAL_UNKNOWN;
-    return sval;
-}
-
-static sigval_state
 get_sigval(
     scmcon *conp,
     object_type typ,
     const char *ski,
     const char *subj)
 {
-    switch (typ)
+    scmtab *table;
+    unsigned int val;
+    scmsrch search_cols[] = {
+        {
+            .colno = 1,
+            .sqltype = SQL_C_ULONG,
+            .colname = "sigval",
+            .valptr = &val,
+            .valsize = sizeof(val),
+        },
+    };
+    char where[WHERESTR_SIZE];
+    if (OT_CER == typ)
     {
-    case OT_CER:
-        return get_cert_sigval(conp, ski, subj);
-    case OT_ROA:
-        return get_roa_sigval(conp, ski);
-        // other cases not handled yet
-    default:
-        break;
+        xsnprintf(where, sizeof(where),
+                  "ski=\"%s\" and subject=\"%s\"", ski, subj);
+        table = theCertTable;
     }
-    return SIGVAL_UNKNOWN;
+    else if (OT_ROA == typ)
+    {
+        xsnprintf(where, sizeof(where), "ski=\"%s\"", ski);
+        table = theROATable;
+    }
+    else
+    {
+        return SIGVAL_UNKNOWN;
+    }
+    scmsrcha sigsrch = {
+        .vec = search_cols,
+        .ntot = ELTS(search_cols),
+        .nused = ELTS(search_cols),
+        .wherestr = where,
+    };
+    err_code sta = 0;
+
+    if (theSCMP != NULL)
+        initTables(theSCMP);
+    sta = searchscm(conp, table, &sigsrch, NULL, &ok,
+                    SCM_SRCH_DOVALUE_ALWAYS, NULL);
+    if (sta < 0)
+        return SIGVAL_UNKNOWN;
+    sigval_state sval = val;
+    if (sval < SIGVAL_UNKNOWN || sval > SIGVAL_INVALID)
+        return SIGVAL_UNKNOWN;
+    return sval;
 }
 
 /**
@@ -642,8 +600,9 @@ get_sigval(
  *     based on the type.
  */
 static err_code
-set_cert_sigval(
+set_sigval(
     scmcon *conp,
+    object_type typ,
     const char *ski,
     const char *subj,
     sigval_state valu)
@@ -651,63 +610,36 @@ set_cert_sigval(
     /** @bug magic number */
     char stmt[520];
     err_code sta;
+    scmtab *table;
+    char where[sizeof(stmt)];
 
     if (theSCMP != NULL)
         initTables(theSCMP);
-    if (theCertTable == NULL)
-        return ERR_SCM_NOSUCHTAB;
-    char escaped_subj[2 * strlen(subj) + 1];
-    mysql_escape_string(escaped_subj, subj, strlen(subj));
-    xsnprintf(stmt, sizeof(stmt),
-              "update %s set sigval=%d where ski=\"%s\" and subject=\"%s\";",
-              theCertTable->tabname, valu, ski, escaped_subj);
-    sta = statementscm_no_data(conp, stmt);
-    return sta;
-}
-
-static err_code
-set_roa_sigval(
-    scmcon *conp,
-    const char *ski,
-    sigval_state valu)
-{
-    /** @bug magic number */
-    char stmt[520];
-    err_code sta;
-
-    if (theSCMP != NULL)
-        initTables(theSCMP);
-    if (theROATable == NULL)
-        return ERR_SCM_NOSUCHTAB;
-    xsnprintf(stmt, sizeof(stmt),
-              "update %s set sigval=%d where ski=\"%s\";",
-              theROATable->tabname, valu, ski);
-    sta = statementscm_no_data(conp, stmt);
-    return sta;
-}
-
-static err_code
-set_sigval(
-    scmcon *conp,
-    object_type typ,
-    const char *ski,
-    const char *subject,
-    sigval_state valu)
-{
-    err_code sta = ERR_SCM_UNSPECIFIED;
-
     switch (typ)
     {
     case OT_CER:
-        sta = set_cert_sigval(conp, ski, subject, valu);
+    {
+        table = theCertTable;
+        size_t subj_len = strlen(subj);
+        char escaped_subj[2 * subj_len + 1];
+        mysql_escape_string(escaped_subj, subj, subj_len);
+        xsnprintf(where, sizeof(where), "ski=\"%s\" and subject=\"%s\"",
+                  ski, escaped_subj);
         break;
+    }
     case OT_ROA:
-        sta = set_roa_sigval(conp, ski, valu);
+        table = theROATable;
+        xsnprintf(where, sizeof(where), "ski=\"%s\"", ski);
         break;
     default:
         // other cases not handled yet
-        break;
+        return ERR_SCM_UNSPECIFIED;
     }
+    if (table == NULL)
+        return ERR_SCM_NOSUCHTAB;
+    xsnprintf(stmt, sizeof(stmt), "update %s set sigval=%d where %s;",
+              table->tabname, valu, where);
+    sta = statementscm_no_data(conp, stmt);
     return sta;
 }
 
