@@ -47,5 +47,11 @@ int readvsize_objid(
     if ((lth = vsize_objid(casnp)) < 0)
         return lth;
     *pp = calloc(1, lth + 1);
-    return read_objid(casnp, *pp, lth + 1);
+    lth = read_objid(casnp, *pp, lth + 1);
+    if (lth < 0)
+    {
+        free(*pp);
+        *pp = NULL;
+    }
+    return lth;
 }
