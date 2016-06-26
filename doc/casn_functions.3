@@ -494,8 +494,11 @@ CASN Functions (3)         ASN.1 C LIBRARY FUNCTIONS   CASN Functions (3)
         notation used for object identifiers, e.g. "1.2.3.4".  The 'write_objid'
         function converts  from  dot  notation  and  returns  the  size  of  the
         converted  value.   The function 'read_objid' converts to dot notation
-        and returns the size of the resulting string.  'vsize_objid' reports how
-        many    characters    'read_objid'    will    return.     The   function
+        and returns the size of the resulting string (not including
+        the null terminator character).  'vsize_objid' returns the
+        value 'read_objid' will return, which is useful for sizing a
+        buffer to pass to 'read_objid' (remember to add one for the
+        null terminator character).  The function
         'readvsize_objid' combines 'vsize_objid', a  'calloc'  operation  and  a
         'read_objid'  to  obtain the value in dot notation, the address of which
         is put into 'pp'.  These return -1  if  the  object  is  not  an  OBJECT

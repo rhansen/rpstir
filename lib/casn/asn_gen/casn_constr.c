@@ -126,7 +126,7 @@ static char simple_opener[] = "void %s(struct %s *mine, ushort level)\n\
     "    mine->self.ptr = (struct casn *)(int (*)(struct casn *))%sConstraint;\n",
 #endif
     constraint_opener[] = "int %sConstraint(struct %s *casnp)\n    {\n",
-    start_objid_constraint[] = "    if (vsize_objid(&casnp->self) > 0 &&\n\
+    start_objid_constraint[] = "    if (vsize_objid(&casnp->self) >= 0 &&\n\
         (",
     end_objid_constraint[] = ")) return 1;\n\
     return 0;\n\

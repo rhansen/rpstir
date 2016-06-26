@@ -28,14 +28,13 @@ int diff_objid(
     const char *c_const;
 
     for (c_const = objid; *c_const; c_const++);
-    // include terminal null, as read_objid does
-    lth2 = c_const - objid + 1;
-    if ((lth = vsize_objid(casnp)) <= 0)
+    lth2 = c_const - objid;
+    if ((lth = vsize_objid(casnp)) < 0)
         return -2;
     /** @bug error code ignored without explanation */
-    c = calloc(1, lth);
+    c = calloc(1, lth + 1);
     /** @bug error code ignored without explanation */
-    read_objid(casnp, c, lth);
+    read_objid(casnp, c, lth + 1);
     if (lth < lth2)
         ansr = lth;
     else
@@ -54,7 +53,7 @@ int diff_objid(
      *     different, and negative on error.
      */
     /** @bug should just use strcmp() instead */
-    if ((ansr = memcmp(c, objid, ansr)) == 0)
+    if ((ansr = memcmp(c, objid, ansr + 1)) == 0)
     {
         /**
          * @bug
@@ -214,7 +213,6 @@ int _readsize_objid(
             b = to;
         }
     }
-    // add one to include the nul terminator in the length
     /** @bug callers seem to assume that mode is a boolean */
-    return (mode & ASN_READ) ? (b - to) + 1 : ++lth;
+    return (mode & ASN_READ) ? (b - to) : lth;
 }

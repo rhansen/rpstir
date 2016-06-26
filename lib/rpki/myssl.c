@@ -3551,9 +3551,9 @@ rescert_sig_algs_chk(
     struct Certificate *certp)
 {
     int length = vsize_objid(&certp->algorithm.algorithm);
-    if (length <= 0)
+    if (length < 0)
     {
-        LOG(LOG_ERR, "length of outer sig alg oid <= 0");
+        LOG(LOG_ERR, "length of outer sig alg oid < 0");
         return ERR_SCM_BADALG;
     }
     char *outer_sig_alg_oidp = calloc(1, length + 1);
@@ -3577,10 +3577,10 @@ rescert_sig_algs_chk(
     }
 
     length = vsize_objid(&certp->toBeSigned.signature.algorithm);
-    if (length <= 0)
+    if (length < 0)
     {
         free(outer_sig_alg_oidp);
-        LOG(LOG_ERR, "length of inner sig alg oid <= 0");
+        LOG(LOG_ERR, "length of inner sig alg oid < 0");
         return ERR_SCM_BADALG;
     }
     char *inner_sig_alg_oidp = calloc(1, length + 1);
@@ -3625,9 +3625,9 @@ rescert_sig_algs_chk(
     length =
         vsize_objid(&certp->toBeSigned.subjectPublicKeyInfo.algorithm.
                     algorithm);
-    if (length <= 0)
+    if (length < 0)
     {
-        LOG(LOG_ERR, "length of subj pub key sig alg oid <= 0");
+        LOG(LOG_ERR, "length of subj pub key sig alg oid < 0");
         return ERR_SCM_BADALG;
     }
     char *alg_pubkey_oidp = calloc(1, length + 1);
@@ -4495,7 +4495,7 @@ crl_extensions_chk(
             LOG(LOG_ERR, "Forbidden CRL extension");
             char *oidp;
             i = vsize_objid(&crlextp->extnID);
-            if (i > 0)
+            if (i >= 0)
             {
                 if (!(oidp = calloc(1, i + 2)))
                 {
@@ -4507,7 +4507,7 @@ crl_extensions_chk(
             {
                 return ERR_SCM_BADEXT;
             }
-            if (read_objid(&crlextp->extnID, oidp, i + 2) <= 0)
+            if (read_objid(&crlextp->extnID, oidp, i + 2) < 0)
             {
                 free(oidp);
                 LOG(LOG_ERR, "Error reading CRLExtension OID");
