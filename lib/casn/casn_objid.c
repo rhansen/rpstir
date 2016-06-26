@@ -89,11 +89,15 @@ int _readsize_objid(
     char *b = to;
     ulong val;
 
+    if (tolen)
+    {
+        // make sure the string is null terminated if we return 0
+        *to = '\0';
+    }
+
     if (casnp->tag == ASN_NOTYPE && (lth = _check_enum(&casnp)) <= 0)
-        /** @bug null terminator hasn't been written if lth is 0 */
         return lth;
     if (!casnp->lth)
-        /** @bug null terminator hasn't been written */
         return 0;
     // elements 1 & 2
     if (casnp->type == ASN_OBJ_ID ||
