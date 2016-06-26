@@ -21,63 +21,18 @@ int diff_objid(
     struct casn *casnp,
     const char *objid)
 {
-    int ansr;
-    int lth;
-    int lth2;
-    char *c;
-    const char *c_const;
+    int ret;
+    char *c = NULL;
 
-    for (c_const = objid; *c_const; c_const++);
-    lth2 = c_const - objid;
-    if ((lth = vsize_objid(casnp)) < 0)
-        return -2;
-    /** @bug error code ignored without explanation */
-    c = calloc(1, lth + 1);
-    /** @bug error code ignored without explanation */
-    read_objid(casnp, c, lth + 1);
-    if (lth < lth2)
-        ansr = lth;
-    else
-        ansr = lth2;
-    /**
-     * @bug
-     *     Callers might expect -1 to indicate that the first OID
-     *     "comes before" the second OID in the OID tree, but a
-     *     comparison of OID strings with strcmp() or memcmp() doesn't
-     *     provide this property.  If -1 is returned, the first OID
-     *     may or may not come before the second OID in the OID tree.
-     *     Similarly, if 1 is returned, the first OID may or may not
-     *     come after the second OID.  Thus, -1 and 1 must be treated
-     *     the same by the caller, so this function might as well
-     *     return 0 if the two are the same, positive if they are
-     *     different, and negative on error.
-     */
-    /** @bug should just use strcmp() instead */
-    if ((ansr = memcmp(c, objid, ansr + 1)) == 0)
+    if ((ret = readvsize_objid(casnp, &c)) < 0)
     {
-        /**
-         * @bug
-         *     this will never be true because the null terminator is
-         *     included in the comparison, so if the memcmp() returns
-         *     0 then the lengths must equal each other
-         */
-        if (lth2 > lth)
-            ansr = 1;
-        /**
-         * @bug
-         *     this will never be true because the null terminator is
-         *     included in the comparison, so if the memcmp() returns
-         *     0 then the lengths must equal each other
-         */
-        else if (lth < lth2)
-            ansr = -1;
+        goto done;
     }
-    else if (ansr > 0)
-        ansr = 1;
-    else
-        ansr = -1;
-    _free_it(c);
-    return ansr;
+    // the !! converts all non-0 values to 1
+    ret = !!strcmp(c, objid);
+done:
+    free(c);
+    return ret;
 }
 
 int read_objid(

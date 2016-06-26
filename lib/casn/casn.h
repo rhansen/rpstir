@@ -104,6 +104,19 @@ diff_casn_time(
     struct casn *casnp1,
     struct casn *casnp2);       // can return -2 (error)!
 
+/**
+ * @brief
+ *     determine whether two ASN.1 object identifiers match
+ *
+ * @param[in] fr_casnp
+ *     Encoded object identifier to compare.  This must be an OID and
+ *     must not be NULL.
+ * @param[in] objidp
+ *     Human readable OID string to compare.  This must not be NULL.
+ * @return
+ *     Positive if the two are different, 0 if the two match, and
+ *     negative on error.
+ */
 int
 diff_objid(
     struct casn *fr_casnp,
