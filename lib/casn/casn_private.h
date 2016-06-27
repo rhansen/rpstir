@@ -145,6 +145,6 @@ char *
 _putd(
     char *to,
     size_t tolen,
-    long val);
+    unsigned long val);
 
 #endif /* LIB_CASN_CASN_PRIVATE_H */

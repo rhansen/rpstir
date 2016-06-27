@@ -156,12 +156,12 @@ _clear_of(
 
 static void
 _stuff_num(
-    int count);
+    unsigned long count);
 
 static void
 _stuff_ofs(
     struct casn *casnp,
-    int num_ofs);
+    unsigned long num_ofs);
 
 static void
 _stuff_string(
@@ -1756,9 +1756,9 @@ char *
 _putd(
     char *to,
     size_t tolen,
-    long val)
+    unsigned long val)
 {
-    long tmp = val / 10;
+    unsigned long tmp = val / 10;
 
     if (tmp)
     {
@@ -1766,7 +1766,6 @@ _putd(
         tolen -= newto - to;
         to = newto;
     }
-    /** @bug this emits garbage if val is negative */
     to += xsnprintf(to, tolen, "%c", (char)((val % 10) + '0'));
     return to;
 }
@@ -2165,7 +2164,7 @@ _skip_casn(
 
 void
 _stuff_num(
-    int count)
+    unsigned long count)
 {
     char *a;
     char *b;
@@ -2192,7 +2191,7 @@ _stuff_num(
 void
 _stuff_ofs(
     struct casn *casnp,
-    int num_ofs)
+    unsigned long num_ofs)
 {
     _stuff_num(num_ofs);
     // now go on up unless this is in an OF
