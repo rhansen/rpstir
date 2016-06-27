@@ -118,7 +118,11 @@ int _readsize_objid(
         {
             val = (val << 7) + (*c & 0x7F);
         }
-        /** @bug invalid read if c == e */
+        if (c == e)
+        {
+            // the last byte had its most significant bit set
+            return _casn_obj_err(casnp, ASN_CODING_ERR);
+        }
         val = (val << 7) + *c++;
 
         _Bool first_iter = (b == to && !lth);
