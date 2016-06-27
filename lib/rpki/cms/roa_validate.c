@@ -521,22 +521,27 @@ cmsValidate(
 
     // check that roa->content->version == 3
     if (diff_casn_num(&rp->content.signedData.version.self, 3) != 0)
+        /** @bug error message not logged */
         return ERR_SCM_BADCMSVER;
 
     // check that roa->content->digestAlgorithms == SHA-256 and NOTHING ELSE
     // (= OID 2.16.840.1.101.3.4.2.1)
     if (num_items(&rp->content.signedData.digestAlgorithms.self) != 1)
+        /** @bug error message not logged */
         return ERR_SCM_BADNUMDALG;
     /** @bug error code ignored without explanation */
     if (diff_objid
         (&rp->content.signedData.digestAlgorithms.cMSAlgorithmIdentifier.
          algorithm, id_sha256))
+        /** @bug error message not logged */
         return ERR_SCM_BADDA;
 
     if ((num_certs = num_items(&rp->content.signedData.certificates.self)) != 1)
+        /** @bug error message not logged */
         return ERR_SCM_BADNUMCERTS;
 
     if (num_items(&rp->content.signedData.signerInfos.self) != 1)
+        /** @bug error message not logged */
         return ERR_SCM_NUMSIGINFO;
 
     sigInfop =
@@ -545,14 +550,18 @@ cmsValidate(
     memset(digestbuf, 0, 40);
 
     if (diff_casn_num(&sigInfop->version.self, 3))
+        /** @bug error message not logged */
         return ERR_SCM_SIGINFOVER;
     if (!size_casn(&sigInfop->sid.subjectKeyIdentifier))
+        /** @bug error message not logged */
         return ERR_SCM_SIGINFOSID;
     /** @bug error code ignored without explanation */
     if (diff_objid(&sigInfop->digestAlgorithm.algorithm, id_sha256))
+        /** @bug error message not logged */
         return ERR_SCM_BADHASHALG;
 
     if (!num_items(&sigInfop->signedAttrs.self))
+        /** @bug error message not logged */
         return ERR_SCM_BADSIGATTRS;
     struct Attribute *attrp;
     bool found_any;
@@ -562,6 +571,7 @@ cmsValidate(
         // make sure it is the same as in EncapsulatedContentInfo
         diff_casn(&attrp->attrValues.array.contentType,
                   &rp->content.signedData.encapContentInfo.eContentType))
+        /** @bug error message not logged */
         return ERR_SCM_BADCONTTYPE;
     // make sure there is one and only one message digest
     if (!(attrp = find_unique_attr(&sigInfop->signedAttrs,
@@ -569,6 +579,7 @@ cmsValidate(
         // make sure the message digest is 32 bytes long and we can get it
         vsize_casn(&attrp->attrValues.array.messageDigest) != 32 ||
         read_casn(&attrp->attrValues.array.messageDigest, digestbuf) != 32)
+        /** @bug error message not logged */
         return ERR_SCM_BADMSGDIGEST;
 
     // if there is a signing time, make sure it is the right format
@@ -585,11 +596,13 @@ cmsValidate(
             || (gsize =
                 vsize_casn(&attrp->attrValues.array.
                            signingTime.generalizedTime)) > 17)
+            /** @bug error message not logged */
             return ERR_SCM_SIGINFOTIM;
         if (usize > 0)
         {
             read_casn(&attrp->attrValues.array.signingTime.utcTime, loctime);
             if (loctime[0] <= '7' && loctime[0] >= '5')
+                /** @bug error message not logged */
                 return ERR_SCM_SIGINFOTIM;
         }
         else
@@ -597,16 +610,19 @@ cmsValidate(
             read_casn(&attrp->attrValues.array.signingTime.generalizedTime,
                       loctime);
             if (strncmp((char *)loctime, "2050", 4) < 0)
+                /** @bug error message not logged */
                 return ERR_SCM_SIGINFOTIM;
         }
     }
     else if (found_any)
+        /** @bug error message not logged */
         return ERR_SCM_SIGINFOTIM;
     // check that there is no more than one binSigning time attribute
     attrp =
         find_unique_attr(&sigInfop->signedAttrs, id_binSigningTimeAttr,
                          &found_any);
     if (attrp == NULL && found_any)
+        /** @bug error message not logged */
         return ERR_SCM_BINSIGTIME;
     // check the hash
     memset(hashbuf, 0, 40);
@@ -618,6 +634,7 @@ cmsValidate(
     // hash it, make sure it's the right length and it matches the digest
     if (gen_hash(tbsp, tbs_lth, hashbuf, CRYPT_ALGO_SHA2) != 32 ||
         memcmp(digestbuf, hashbuf, 32) != 0)
+        /** @bug error message not logged */
         ret = ERR_SCM_BADDIGEST;
     free(tbsp);                 // done with the content now
 
@@ -639,6 +656,7 @@ cmsValidate(
             /** @bug error code ignored without explanation */
             diff_objid(&attrp->attrType, id_binSigningTimeAttr))
         {
+            /** @bug error message not logged */
             return ERR_SCM_INVALSATTR;
         }
     }
@@ -665,10 +683,12 @@ cmsValidate(
         /** @bug error code ignored without explanation */
         || diff_casn(&extp->extnValue.subjectKeyIdentifier,
                      &sigInfop->sid.subjectKeyIdentifier))
+        /** @bug error message not logged */
         return ERR_SCM_SIGINFOSID;
 
     // check that roa->content->crls == NULL
     if (size_casn(&rp->content.signedData.crls.self) > 0)
+        /** @bug error message not logged */
         return ERR_SCM_HASCRL;
 
     // check that roa->content->signerInfo.digestAlgorithm == SHA-256
@@ -677,11 +697,13 @@ cmsValidate(
     if (diff_objid
         (&rp->content.signedData.signerInfos.signerInfo.digestAlgorithm.
          algorithm, id_sha256))
+        /** @bug error message not logged */
         return ERR_SCM_BADDA;
 
     if (size_casn
         (&rp->content.signedData.signerInfos.signerInfo.unsignedAttrs.self) !=
         0)
+        /** @bug error message not logged */
         return ERR_SCM_UNSIGATTR;
 
     // See http://www.ietf.org/mail-archive/web/sidr/current/msg04813.html for
@@ -709,6 +731,7 @@ cmsValidate(
     if (vsize_casn
         (&rp->content.signedData.signerInfos.signerInfo.
          sid.subjectKeyIdentifier) != 20)
+        /** @bug error message not logged */
         return ERR_SCM_INVALSKI;
 
     // everything checked out
