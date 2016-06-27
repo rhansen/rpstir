@@ -131,11 +131,23 @@ int _readsize_objid(
              (casnp->type == ASN_ANY && casnp->tag == ASN_OBJ_ID))
             && first_iter)
         {
-            /** @bug magic numbers */
+            // The encoding of the first two elements is special:
+            // According to X.690, the only valid values for the first
+            // element are 0, 1, and 2.  If the first element has
+            // value 0 or 1, the second element must have a value
+            // between 0 and 39 (inclusive).  The first two elements
+            // are encoded together by encoding the value:
+            //     40*element1 + element2
+            // Thus:
+            //   - If val is < 40, then the first element is 0 and the
+            //     second element is val.
+            //   - If val is >= 40 and < 80, then the first element is
+            //     1 and the second element is val - 40.
+            //   - If val is >= 80, then the first element is 2 and
+            //     the second element is val - 80.
             /** @bug _putd() takes a long, not an unsigned long */
             b = _putd(b, tolen - (b - to), (val < 120) ? (val / 40) : 2);
             b += xstrlcpy(b, ".", tolen - (b - to));
-            /** @bug magic numbers */
             /** @bug _putd() takes a long, not an unsigned long */
             b = _putd(b, tolen - (b - to), (val < 120) ? (val % 40) : val - 80);
         }
