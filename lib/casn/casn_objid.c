@@ -83,6 +83,7 @@ int _readsize_objid(
     size_t tolen,
     int mode)
 {
+    int ret = 0;
     int lth = 0;
     uchar *c = casnp->startp;
     uchar *e = &c[casnp->lth];
@@ -95,14 +96,12 @@ int _readsize_objid(
         *to = '\0';
     }
 
-    if (casnp->tag == ASN_NOTYPE && (lth = _check_enum(&casnp)) <= 0)
-        return lth;
-    if (!casnp->lth)
-        return 0;
-    // elements 1 & 2
-    if (casnp->type == ASN_OBJ_ID ||
-        // have to allow tag for a mixed definer
-        (casnp->type == ASN_ANY && casnp->tag == ASN_OBJ_ID))
+    if (casnp->tag == ASN_NOTYPE && (ret = _check_enum(&casnp)) <= 0)
+    {
+        return ret;
+    }
+
+    while (c < e)
     {
         /**
          * @bug
@@ -121,49 +120,29 @@ int _readsize_objid(
         }
         /** @bug invalid read if c == e */
         val = (val << 7) + *c++;
-        /** @bug magic numbers */
-        /** @bug _putd() takes a long, not an unsigned long */
-        b = _putd(b, tolen - (b - to), (val < 120) ? (val / 40) : 2);
-        b += xstrlcpy(b, ".", tolen - (b - to));
-        /** @bug magic numbers */
-        /** @bug _putd() takes a long, not an unsigned long */
-        b = _putd(b, tolen - (b - to), (val < 120) ? (val % 40) : val - 80);
-        /** @bug callers seem to assume that mode is a boolean */
-        if (!(mode & ASN_READ))
-        {
-            lth = b - to;
-            b = to;
-        }
-        if (c < e)
+
+        _Bool first_iter = (b == to && !lth);
+        if (!first_iter)
         {
             b += xstrlcpy(b, ".", tolen - (b - to));
         }
-    }
-    while (c < e)
-    {
-        /**
-         * @bug
-         *     This logic does not properly handle OID components that
-         *     are too big to fit in an unsigned long
-         */
-        /**
-         * @bug
-         *     BER and DER require the minimal number of octets.  This
-         *     logic ignores excess octets.  Should it error out
-         *     instead?
-         */
-        /** @bug invalid read if c >= e */
-        for (val = 0; (*c & 0x80); c++)
+        if ((casnp->type == ASN_OBJ_ID ||
+             // have to allow tag for a mixed definer
+             (casnp->type == ASN_ANY && casnp->tag == ASN_OBJ_ID))
+            && first_iter)
         {
-            val = (val << 7) + (*c & 0x7F);
-        }
-        /** @bug invalid read if c >= e */
-        val = (val << 7) + *c++;
-        /** @bug _putd() takes a long, not an unsigned long */
-        b = _putd(b, tolen - (b - to), val);
-        if (c < e)
-        {
+            /** @bug magic numbers */
+            /** @bug _putd() takes a long, not an unsigned long */
+            b = _putd(b, tolen - (b - to), (val < 120) ? (val / 40) : 2);
             b += xstrlcpy(b, ".", tolen - (b - to));
+            /** @bug magic numbers */
+            /** @bug _putd() takes a long, not an unsigned long */
+            b = _putd(b, tolen - (b - to), (val < 120) ? (val % 40) : val - 80);
+        }
+        else
+        {
+            /** @bug _putd() takes a long, not an unsigned long */
+            b = _putd(b, tolen - (b - to), val);
         }
         /** @bug callers seem to assume that mode is a boolean */
         if (!(mode & ASN_READ))
