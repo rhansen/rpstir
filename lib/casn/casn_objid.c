@@ -146,10 +146,10 @@ int _readsize_objid(
             //   - If val is >= 80, then the first element is 2 and
             //     the second element is val - 80.
             /** @bug _putd() takes a long, not an unsigned long */
-            b = _putd(b, tolen - (b - to), (val < 120) ? (val / 40) : 2);
+            b = _putd(b, tolen - (b - to), (val < 80) ? (val / 40) : 2);
             b += xstrlcpy(b, ".", tolen - (b - to));
             /** @bug _putd() takes a long, not an unsigned long */
-            b = _putd(b, tolen - (b - to), (val < 120) ? (val % 40) : val - 80);
+            b = _putd(b, tolen - (b - to), (val < 80) ? (val % 40) : val - 80);
         }
         else
         {
