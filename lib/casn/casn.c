@@ -53,6 +53,7 @@ static struct casn_errors {
     {ASN_RECURSION_ERR, "Constraint calls forbidden function"},
     {ASN_ENUM_ERR, "Item must be enumerated"},
     {ASN_FILE_ERR, "Error opening file"},
+    {ASN_OVERFLOW_ERR, "Overflow"},
     {0, "Undefined error"},
 };
 

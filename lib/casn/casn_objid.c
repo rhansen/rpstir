@@ -105,17 +105,18 @@ int _readsize_objid(
     {
         /**
          * @bug
-         *     This logic does not properly handle OID components that
-         *     are too big to fit in an unsigned long
-         */
-        /**
-         * @bug
          *     BER and DER require the minimal number of octets.  This
          *     logic ignores excess octets.  Should it error out
          *     instead?
          */
         for (val = 0; c < e && (*c & 0x80); c++)
         {
+            static const ulong MSB_MASK = (ulong)(-1) - ((ulong)(-1) >> 7);
+            if (val & MSB_MASK)
+            {
+                // ulong isn't big enough to hold the value
+                return _casn_obj_err(casnp, ASN_OVERFLOW_ERR);
+            }
             val = (val << 7) + (*c & 0x7F);
         }
         if (c == e)

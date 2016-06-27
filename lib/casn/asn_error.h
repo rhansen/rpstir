@@ -42,4 +42,5 @@ void asn_error(
 #define ASN_RECURSION_ERR   25
 #define ASN_ENUM_ERR        26
 #define ASN_FILE_ERR        27
+#define ASN_OVERFLOW_ERR    28
 #endif                          /* _ASN_ERROR_H */
