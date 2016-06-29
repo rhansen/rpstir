@@ -21,8 +21,10 @@
 #include <string.h>
 #include "config/config.h"
 
-int eecert = 0;                 // either EE or CA
-int selfSigned = 0;             // defaults to not self signed
+// either EE or CA
+int eecert = 0;
+// defaults to not self signed
+int selfSigned = 0;
 
 /*
  * function declarations
@@ -39,15 +41,18 @@ int get_table_value(
     struct object_field *table,
     char **value,
     int *type);
+// filename of parent cert
 int use_parent_cert(
     void *cert,
-    void *val);                 // filename of parent cert
+    void *val);
+// filename of parent keyfile
 int use_parent_keyfile(
     void *cert,
-    void *val);                 // filename of parent keyfile
+    void *val);
+// filename of subject keyfile
 int use_subject_keyfile(
     void *cert,
-    void *val);                 // filename of subject keyfile
+    void *val);
 int write_serialNum(
     void *cert,
     void *val);
@@ -98,35 +103,45 @@ int write_cert_asnums(
  * parentcertfile) or it can be specified exactly as issuer)
  */
 struct object_field cert_field_table[] = {
-    {"outputfilename", TEXT, NULL, REQUIRED, NULL},     // for the certificate
+    // for the certificate
+    {"outputfilename", TEXT, NULL, REQUIRED, NULL},
     {"parentcertfile", TEXT, NULL, OPTIONAL, use_parent_cert},
     {"parentkeyfile", TEXT, NULL, OPTIONAL, NULL},
     {"subjkeyfile", TEXT, NULL, OPTIONAL, use_subject_keyfile},
-    {"type", TEXT, NULL, REQUIRED, NULL},       // either 'CA' or 'EE'
-    {"serial", INTEGER, NULL, OPTIONAL, write_serialNum},       // serial
-                                                                // number
-    {"issuer", TEXT, NULL, OPTIONAL, write_issuer_name},        // issuers
-                                                                // name
-    {"subject", TEXT, NULL, OPTIONAL, write_subject_name},      // subject
-                                                                // name
-    {"notBefore", TEXT, NULL, REQUIRED, write_notBefore_time},  // validity
-    {"notAfter", TEXT, NULL, REQUIRED, write_notAfter_time},    // validity
-    {"pubkey", LIST, NULL, OPTIONAL, write_cert_pubkey},        // public Key
-    {"ski", OCTETSTRING, NULL, OPTIONAL, write_cert_ski},       // Subj key
-                                                                // identifier
-    {"aki", OCTETSTRING, NULL, OPTIONAL, write_cert_aki},       // Issuer key
-                                                                // id
-    {"crldp", LIST, NULL, OPTIONAL, write_cert_crldp},  // crl distribution
-                                                        // point
-    {"aia", TEXT, NULL, OPTIONAL, write_cert_aia},      // auth information
-                                                        // access
-    {"sia", TEXT, NULL, OPTIONAL, write_cert_sia},      // subj information
-                                                        // access
-    {"ipv4", LIST, NULL, OPTIONAL, write_cert_ipv4},    // ipv4 addresses
-    {"ipv6", LIST, NULL, OPTIONAL, write_cert_ipv6},    // ipv6 addresses
-    {"as", LIST, NULL, OPTIONAL, write_cert_asnums},    // as num resources
-    {"signatureValue", OCTETSTRING, NULL, OPTIONAL, NULL},    // sig
-    {"selfsigned", TEXT, NULL, OPTIONAL, NULL}, // true or false
+    // either 'CA' or 'EE'
+    {"type", TEXT, NULL, REQUIRED, NULL},
+    // serial number
+    {"serial", INTEGER, NULL, OPTIONAL, write_serialNum},
+    // issuers name
+    {"issuer", TEXT, NULL, OPTIONAL, write_issuer_name},
+    // subject name
+    {"subject", TEXT, NULL, OPTIONAL, write_subject_name},
+    // validity
+    {"notBefore", TEXT, NULL, REQUIRED, write_notBefore_time},
+    // validity
+    {"notAfter", TEXT, NULL, REQUIRED, write_notAfter_time},
+    // public Key
+    {"pubkey", LIST, NULL, OPTIONAL, write_cert_pubkey},
+    // Subj key identifier
+    {"ski", OCTETSTRING, NULL, OPTIONAL, write_cert_ski},
+    // Issuer key id
+    {"aki", OCTETSTRING, NULL, OPTIONAL, write_cert_aki},
+    // crl distribution point
+    {"crldp", LIST, NULL, OPTIONAL, write_cert_crldp},
+    // auth information access
+    {"aia", TEXT, NULL, OPTIONAL, write_cert_aia},
+    // subj information access
+    {"sia", TEXT, NULL, OPTIONAL, write_cert_sia},
+    // ipv4 addresses
+    {"ipv4", LIST, NULL, OPTIONAL, write_cert_ipv4},
+    // ipv6 addresses
+    {"ipv6", LIST, NULL, OPTIONAL, write_cert_ipv6},
+    // as num resources
+    {"as", LIST, NULL, OPTIONAL, write_cert_asnums},
+    // sig
+    {"signatureValue", OCTETSTRING, NULL, OPTIONAL, NULL},
+    // true or false
+    {"selfsigned", TEXT, NULL, OPTIONAL, NULL},
     {NULL, 0, NULL, REQUIRED, NULL}
 };
 

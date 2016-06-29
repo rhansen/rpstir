@@ -1433,7 +1433,8 @@ crl_fields *crl2fields(
     err_code snerr;
     int need;
     int i;
-    unsigned int snlen; // snlen (total num of serials) >= cf->snlen (num of valid serials)
+    // snlen (total num of serials) >= cf->snlen (num of valid serials)
+    unsigned int snlen;
 
     if (stap == NULL || crlstap == NULL)
         return (NULL);

@@ -18,8 +18,10 @@
 // certificate field value types
 #define TEXT 1
 #define INTEGER 2
-#define OCTETSTRING 3           // i.e. hex string (oxff0a)
-#define LIST 3                  // i.e. a comma separated list
+// i.e. hex string (0xff0a)
+#define OCTETSTRING 3
+// i.e. a comma separated list
+#define LIST 3
 
 #define REQUIRED 1
 #define OPTIONAL 0

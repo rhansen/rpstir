@@ -186,7 +186,8 @@ int fieldInTable(
         t_field_len = strlen(t_field);
         if (t_field_len == field_len)
             if (strncasecmp(t_field, field, t_field_len) == 0)
-                return i;       // same length and match, done
+                // same length and match, done
+                return i;
         t_field = tbl[++i].name;
     }
     // not found

@@ -212,7 +212,8 @@ int encode_ipAddr(
     while (mask && !(mask & *lucp) && (mask & *hucp))
         mask >>= 1;
 
-    if (!mask)                  // now test remainder of bytes
+    // now test remainder of bytes
+    if (!mask)
     {
         for (lucp++, hucp++; lucp < eucp && !*lucp && *hucp == 0xff;
              lucp++, hucp++);
