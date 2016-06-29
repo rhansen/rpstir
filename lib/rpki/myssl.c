@@ -179,7 +179,7 @@ char *ASNTimeToDBTime(
             goto done;
         }
     }
-    out = (char *)calloc(48, sizeof(char));
+    out = calloc(48, sizeof(char));
     if (out == NULL)
     {
         *stap = ERR_SCM_NOMEM;
@@ -210,7 +210,7 @@ char *UnixTimeToDBTime(
     char *out;
     err_code sta = 0;
 
-    out = (char *)calloc(48, sizeof(char));
+    out = calloc(48, sizeof(char));
     if (out == NULL)
     {
         sta = ERR_SCM_NOMEM;
@@ -287,7 +287,7 @@ static char *strappend(
     if (instr == NULL)
         return (strdup(nstr));
     leen = strlen(instr) + strlen(nstr) + 24;
-    outstr = (char *)calloc(leen, sizeof(char));
+    outstr = calloc(leen, sizeof(char));
     if (outstr == NULL)
         return (instr);
     xsnprintf(outstr, leen, "%s;%s", instr, nstr);
@@ -907,7 +907,7 @@ cert_fields *cert2fields(
     {
         *xp = NULL;
         freex = 1;
-        cf = (cert_fields *) calloc(1, sizeof(cert_fields));
+        cf = calloc(1, sizeof(cert_fields));
         if (cf == NULL)
         {
             *stap = ERR_SCM_NOMEM;
@@ -958,7 +958,7 @@ cert_fields *cert2fields(
             return (NULL);
         }
         freex = 0;
-        cf = (cert_fields *) calloc(1, sizeof(cert_fields));
+        cf = calloc(1, sizeof(cert_fields));
         if (cf == NULL)
         {
             *stap = ERR_SCM_NOMEM;
@@ -1084,7 +1084,7 @@ char *X509_to_ski(
         *stap = ERR_SCM_INVALARG;
         return (NULL);
     }
-    cf = (cert_fields *) calloc(1, sizeof(cert_fields));
+    cf = calloc(1, sizeof(cert_fields));
     if (cf == NULL)
     {
         *stap = ERR_SCM_NOMEM;
@@ -1449,7 +1449,7 @@ crl_fields *crl2fields(
     {
         *xp = NULL;
         freex = 1;
-        cf = (crl_fields *) calloc(1, sizeof(crl_fields));
+        cf = calloc(1, sizeof(crl_fields));
         if (cf == NULL)
         {
             *stap = ERR_SCM_NOMEM;
@@ -1500,7 +1500,7 @@ crl_fields *crl2fields(
             return (NULL);
         }
         freex = 0;
-        cf = (crl_fields *) calloc(1, sizeof(crl_fields));
+        cf = calloc(1, sizeof(crl_fields));
         if (cf == NULL)
         {
             *stap = ERR_SCM_NOMEM;
@@ -1542,7 +1542,7 @@ crl_fields *crl2fields(
     snerr = 0;
     if (snlen > 0)
     {
-        cf->snlist = (void *)calloc(snlen, SER_NUM_MAX_SZ);
+        cf->snlist = calloc(snlen, SER_NUM_MAX_SZ);
         if (cf->snlist == NULL)
         {
             *stap = ERR_SCM_NOMEM;
@@ -4246,7 +4246,7 @@ cvt_crldate2DB(
     {
         if (i != 13)
             return ERR_SCM_INVALDT;
-        if (!(buf = (char *)calloc(1, i + 2)))
+        if (!(buf = calloc(1, i + 2)))
             return ERR_SCM_NOMEM;
         read_casn(&cotp->utcTime, (uchar *) buf);
     }
@@ -4255,7 +4255,7 @@ cvt_crldate2DB(
         i = vsize_casn(&cotp->generalTime);
         if (i < 15)
             return ERR_SCM_INVALDT;
-        if (!(buf = (char *)calloc(1, i + 2)))
+        if (!(buf = calloc(1, i + 2)))
             return ERR_SCM_NOMEM;
         read_casn(&cotp->generalTime, (uchar *) buf);
         if (i > 15 && (buf[i - 1] == '0' || buf[i - 1] == '.'))
@@ -4496,7 +4496,7 @@ crl_extensions_chk(
             i = vsize_objid(&crlextp->extnID);
             if (i > 0)
             {
-                if (!(oidp = (char *)calloc(1, i + 2)))
+                if (!(oidp = calloc(1, i + 2)))
                 {
                     LOG(LOG_ERR, "Can't get memory while checking CRL");
                     return ERR_SCM_NOMEM;
