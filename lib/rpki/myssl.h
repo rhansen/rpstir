@@ -241,16 +241,16 @@ extern cert_fields *cert2fields(
  * order to insert it into the DB.
  */
 
-#define CRF_FIELD_FILENAME    0
-#define CRF_FIELD_ISSUER      1
-#define CRF_FIELD_LAST        2
-#define CRF_FIELD_NEXT        3
-#define CRF_FIELD_SIGNATURE   4
-
-#define CRF_FIELD_SN          5
-#define CRF_FIELD_AKI         6
-
-#define CRF_NFIELDS         (CRF_FIELD_AKI+1)
+typedef enum {
+    CRF_FIELD_FILENAME,
+    CRF_FIELD_ISSUER,
+    CRF_FIELD_LAST,
+    CRF_FIELD_NEXT,
+    CRF_FIELD_SIGNATURE,
+    CRF_FIELD_SN,
+    CRF_FIELD_AKI,
+    CRF_NFIELDS // this must be last
+} crf_field;
 
 
 /*
@@ -301,7 +301,7 @@ crfx_get(
 
 typedef struct _crf_validator {
     crf_get *get_func;
-    int fieldno;
+    crf_field fieldno;
     int need;
 } crf_validator;
 
@@ -314,7 +314,7 @@ typedef struct _crf_validator {
 
 typedef struct _crfx_validator {
     crfx_get *get_func;
-    int fieldno;
+    crf_field fieldno;
     int tag;
     int need;
 } crfx_validator;
