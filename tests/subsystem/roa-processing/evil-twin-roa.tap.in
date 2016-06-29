@@ -1,0 +1,55 @@
+#!/bin/sh
+
+# This scenario has the following object hierarchy:
+#
+#        TA
+#        |
+#     GoodROA  BadROA
+#
+# Properties of BadROA:
+#   * the EE cert has the same SKI as the EE cert in GoodROA
+#   * the ROA signature bits differ from the signature bits in GoodROA
+#   * the signature on the ROA is invalid
+#   * the prefixes in the ROA differ from the prefixes in GoodROA
+
+@SETUP_ENVIRONMENT@
+
+t4s_setup
+
+u=${TESTS_TOP_SRCDIR}/tests/util.sh
+. "${u}" || t4s_bailout "unable to load ${u}"
+pecho() { printf %s\\n "$*"; }
+
+cd "${TESTS_BUILDDIR}" || t4s_bailout "unable to cd to ${TESTS_BUILDDIR}"
+
+expected=""
+
+check_accepted() {
+    port_open 1234 || t4s_bailout "can't listen on port 1234"
+    run_bg rtrd rkpi-rtr-daemon
+    daemon_pid=$!
+    actual=$(pecho "reset_query" | rpki-rtr-test-client write \
+                 | rpki-rtr-test-client client_one localhost 1234)
+    kill "${daemon_pid}"
+    wait "${daemon_pid}"
+    [ "${actual}" = "${expected}" ] || {
+        while IFS= read -r line; do
+            error "${line}"
+        done <<EOF
+rpki-rtr results differ from expected
+expected:
+----------------------------------------------------------------------
+${expected}
+----------------------------------------------------------------------
+actual:
+----------------------------------------------------------------------
+${actual}
+----------------------------------------------------------------------
+EOF
+        exit 1
+    }
+}
+
+test_perms "${0##*/}".cache "ta.cer good.roa bad.roa"
+
+t4s_done

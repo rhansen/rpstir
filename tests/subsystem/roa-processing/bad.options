@@ -1,0 +1,12 @@
+type=EE
+issuer=ta-bad
+subject=bad
+aia=rsync://invalid/
+sia=s:rsync://invalid/
+ipv4=1.0.0.0/24
+ipv6=1::/48
+as=128-159
+selfsigned=false
+parentcertfile=tests/subsystem/roa-processing/ta.cer
+parentkeyfile=tests/subsystem/roa-processing/ta.key
+subjkeyfile=tests/subsystem/roa-processing/good.key

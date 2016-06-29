@@ -147,6 +147,45 @@ clean-roa-ee-munge:
 	rm -rf tests/subsystem/roa-ee-munge/roa-ee-munge.tap.cache
 
 ######################################################################
+## ROA processing tests
+######################################################################
+TESTS += \
+	tests/subsystem/roa-processing/evil-twin-roa.tap
+check_SCRIPTS += \
+	tests/subsystem/roa-processing/evil-twin-roa.tap
+tests/subsystem/roa-processing/evil-twin-roa.tap: \
+	tests/subsystem/roa-processing/evil-twin-roa.tap.in
+MK_SUBST_FILES_EXEC += \
+	tests/subsystem/roa-processing/evil-twin-roa.tap
+CERTS += \
+	tests/subsystem/roa-processing/ta.cer \
+	tests/subsystem/roa-processing/good.cer \
+	tests/subsystem/roa-processing/bad.cer
+ROAS += \
+	tests/subsystem/roa-processing/good.roa \
+	tests/subsystem/roa-processing/bad.roa
+tests/subsystem/roa-processing/ta.cer: \
+	tests/subsystem/roa-processing/ta.options \
+	tests/subsystem/roa-processing/ta.key
+tests/subsystem/roa-processing/good.cer: \
+	tests/subsystem/roa-processing/good.options \
+	tests/subsystem/roa-processing/good.key
+tests/subsystem/roa-processing/good.roa: \
+	tests/subsystem/roa-processing/good.cer \
+	tests/subsystem/roa-processing/good.key \
+	tests/subsystem/roa-processing/good.roa.options
+tests/subsystem/roa-processing/bad.cer: \
+	tests/subsystem/roa-processing/bad.options \
+	tests/subsystem/roa-processing/bad.key
+tests/subsystem/roa-processing/bad.roa: \
+	tests/subsystem/roa-processing/bad.cer \
+	tests/subsystem/roa-processing/bad.key \
+	tests/subsystem/roa-processing/bad.roa.options
+clean-local: clean-roa-processing
+clean-roa-processing:
+	rm -rf tests/subsystem/roa-processing/evil-twin-roa.tap.cache
+
+######################################################################
 ## evil twin tests
 ######################################################################
 EVIL_TWIN_TESTS = \
