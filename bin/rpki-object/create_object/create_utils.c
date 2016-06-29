@@ -209,8 +209,6 @@ int get_table_value(
 
     *value = table[offset].value;
     *type = table[offset].type;
-    // fprintf(stdout,"Value and type for %s is %s, %d\n", name, *value,
-    // *type);
     return SUCCESS;
 }
 

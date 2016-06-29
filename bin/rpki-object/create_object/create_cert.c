@@ -572,7 +572,6 @@ int write_cert_pubkey(
     pExp += 2;
 
     exp_len = strlen(pExp);
-    // fprintf(stdout, "exponent is: %s, len is %d\n", pExp, exp_len);
 
     mkey = calloc(mod_len / 2 + 1, sizeof(char));
     ekey = calloc(exp_len / 2 + 1, sizeof(char));
@@ -595,7 +594,6 @@ int write_cert_pubkey(
         free(ekey);
         return -1;
     }
-    // fprintf(stdout, "bytes written are %d\n", bytes_written);
     if (write_casn(&rpk.exponent, ekey, bytes_written) < 0)
     {
         free(ekey);

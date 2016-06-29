@@ -22,7 +22,6 @@
 #include "create_object.h"
 #include "obj_err.h"
 #include "util/inet.h"
-// #include "create_utils.h"
 #include "config/config.h"
 
 void print_table(
@@ -59,7 +58,6 @@ int write_asID(
 
     long asNum = strtol(((char *)value), NULL, 0);
 
-    // clear_casn(&roa->content.signedData.encapContentInfo.eContent.roa.asID);
     if (write_casn_num
         (&roa->content.signedData.encapContentInfo.eContent.roa.asID,
          asNum) <= 0)
@@ -147,8 +145,6 @@ int parse_and_write_ips(
         else
         {
             ipAddr = next;
-            // if(write_casn_num(&roafp->maxLength, 0)<0)
-            // return -1;
         }
 
         // A buffer to send to the inet_pton function which takes care of
