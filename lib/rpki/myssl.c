@@ -25,6 +25,7 @@
 #include "util/logging.h"
 #include "rpwork.h"
 #include "rpki-asn1/crlv2.h"
+#include "util/macros.h"
 #include "util/stringutils.h"
 
 int strict_profile_checks = 0;
@@ -850,7 +851,7 @@ static cfx_validator *cfx_find(
 {
     unsigned int i;
 
-    for (i = 0; i < sizeof(xvalidators) / sizeof(cfx_validator); i++)
+    for (i = 0; i < ELTS(xvalidators); i++)
     {
         if (xvalidators[i].tag == tag)
             return (&xvalidators[i]);
@@ -1035,7 +1036,7 @@ cert_fields *cert2fields(
             break;
     }
     // check that all needed extension fields are present
-    for (ui = 0; ui < sizeof(xvalidators) / sizeof(cfx_validator); ui++)
+    for (ui = 0; ui < ELTS(xvalidators); ui++)
     {
         if (xvalidators[ui].need > 0 &&
             cf->fields[xvalidators[ui].fieldno] == NULL)
@@ -1395,7 +1396,7 @@ static crfx_validator *crfx_find(
 {
     unsigned int i;
 
-    for (i = 0; i < sizeof(crxvalidators) / sizeof(crfx_validator); i++)
+    for (i = 0; i < ELTS(crxvalidators); i++)
     {
         if (crxvalidators[i].tag == tag)
             return (&crxvalidators[i]);
@@ -1667,7 +1668,7 @@ crl_fields *crl2fields(
     // check that all needed extension fields are present
     if (!*stap)
     {
-        for (ui = 0; ui < sizeof(crxvalidators) / sizeof(crfx_validator); ui++)
+        for (ui = 0; ui < ELTS(crxvalidators); ui++)
         {
             if (crxvalidators[ui].need > 0 &&
                 cf->fields[crxvalidators[ui].fieldno] == NULL)
@@ -3396,7 +3397,7 @@ rescert_crit_ext_chk(
         return ERR_SCM_BADEXT;
 
     if (bsearch((char *)&ex_nid, (char *)supported_nids,
-                sizeof(supported_nids) / sizeof(int), sizeof(int),
+                ELTS(supported_nids), sizeof(int),
                 (int (*)(const void *, const void *))res_nid_cmp))
         return (0);
     return (ERR_SCM_BADEXT);
