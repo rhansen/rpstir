@@ -623,8 +623,8 @@ int write_sig(
 {
     struct CertificateToBeSigned *tbsp =
         &((struct Certificate *)cert)->toBeSigned;
-    int str_len,
-        sig_len;
+    int str_len;
+    int sig_len;
     char *str_sig = val;
     unsigned char *sig = NULL;
     int bytes_written;
@@ -675,8 +675,8 @@ int write_key_identifier(
 {
     struct CertificateToBeSigned *tbsp =
         &((struct Certificate *)cert)->toBeSigned;
-    int str_len,
-        ki_len;
+    int str_len;
+    int ki_len;
     char *str_ki = val;
     unsigned char *ki = NULL;
     int bytes_written;

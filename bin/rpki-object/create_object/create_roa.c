@@ -78,9 +78,9 @@ int parse_and_write_ips(
     long addrFam,
     int numFam)
 {
-    char *next,
-       *ipAddr,
-       *buf;
+    char *next;
+    char *ipAddr;
+    char *buf;
     char *token = ",";
     int numIps = 0;
     char family[2];
@@ -179,11 +179,11 @@ int encode_ipAddr(
 {
 
     int lth = (family == AF_INET) ? 4 : 16;
-    uchar lolim[18],
-        hilim[18];
-    uchar *hucp,
-       *lucp,
-       *eucp = &lolim[lth];
+    uchar lolim[18];
+    uchar hilim[18];
+    uchar *hucp;
+    uchar *lucp;
+    uchar *eucp = &lolim[lth];
     uchar mask = 0;
     int numbits = 0;
 
